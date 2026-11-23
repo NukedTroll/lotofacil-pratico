@@ -1,0 +1,23 @@
+name: Atualizar resultados
+on:
+  schedule:
+    - cron: "30 0 * * *"
+    - cron: "30 2 * * *"
+    - cron: "0 10 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python atualizar.py
+      - run: |
+          git config user.name "robo-atualizador"
+          git config user.email "robo@users.noreply.github.com"
+          git add resultados.json
+          git diff --cached --quiet || (git commit -m "Atualiza resultados" && git push)
