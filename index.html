@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lotofácil Prático: gerar e conferir jogos</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f4f1f7;--card:#fff;--tx:#1d1a22;--mut:#5b5565;--bd:#ddd6e6;--ac:#6a1b9a;--acx:#fff;--ac2:#efe3f6;--ok:#157a43;--okb:#dff3e8;--err:#b42318;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15121a;--card:#1f1b27;--tx:#f1eef5;--mut:#b2aabf;--bd:#352f42;--ac:#c58be0;--acx:#1b0f22;--ac2:#33264a;--ok:#5fd39a;--okb:#143a29;--err:#ff8b7e}}
+:root[data-theme="dark"]{--bg:#15121a;--card:#1f1b27;--tx:#f1eef5;--mut:#b2aabf;--bd:#352f42;--ac:#c58be0;--acx:#1b0f22;--ac2:#33264a;--ok:#5fd39a;--okb:#143a29;--err:#ff8b7e}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:18px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--ac);color:var(--acx);padding:18px 16px}
+header h1{margin:0;font-size:1.5rem}header p{margin:2px 0 0;opacity:.9;font-size:1rem}
+main{max-width:820px;margin:0 auto;padding:16px 14px 40px}
+nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:16px}
+nav button{background:var(--card);color:var(--tx);border:2px solid var(--bd);border-radius:12px;padding:12px 6px;font:inherit;font-weight:700;cursor:pointer;line-height:1.2}
+nav button b{display:block;font-size:1.4rem}
+nav button.on{background:var(--ac);color:var(--acx);border-color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:18px;margin-bottom:16px}
+h2{font-size:1.3rem;margin:0 0 6px}
+p{margin:6px 0}.mut{color:var(--mut);font-size:1rem}
+label{display:block;font-weight:600;margin:14px 0 4px}
+input,select{width:100%;min-height:52px;padding:10px 12px;font:inherit;border:2px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)}
+.btn{display:block;width:100%;min-height:56px;margin-top:16px;background:var(--ac);color:var(--acx);border:0;border-radius:12px;font:inherit;font-weight:700;font-size:1.1rem;cursor:pointer}
+.btn.sec{background:var(--ac2);color:var(--ac)}
+.btn.sm{display:inline-block;width:auto;min-height:44px;margin:8px 8px 0 0;padding:8px 16px;font-size:1rem}
+.ok{color:var(--ok);font-weight:600}.er{color:var(--err);font-weight:600}
+.balls{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.b{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;background:var(--ac2);color:var(--ac);border:2px solid transparent}
+.b.hit{background:var(--ok);color:#fff}
+.g{border:1px solid var(--bd);border-radius:12px;padding:12px;margin-top:12px}
+.hid{display:none}
+.row2{display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-top:8px}
+.pr{display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap}
+.pr label{margin:0;display:flex;gap:10px;align-items:center;flex:1;font-weight:500}
+.pr input[type=checkbox]{width:30px;min-height:30px}
+.res{font-weight:700;font-size:1.1rem}
+footer{max-width:820px;margin:0 auto;padding:0 14px 30px;color:var(--mut);font-size:.88rem}
+</style>
+</head>
+<body>
+<header><h1>🍀 Lotofácil Prático</h1><p>Gere seus jogos e confira os resultados de forma simples.</p></header>
+<main>
+<nav>
+<button id="n1" class="on"><b>1</b>Resultados</button>
+<button id="n2"><b>2</b>Gerar jogos</button>
+<button id="n3"><b>3</b>Meus jogos</button>
+<button id="n4"><b>4</b>Bolão</button>
+</nav>
+
+<section id="s1" class="card">
+<h2>Passo 1: carregar os resultados</h2>
+<p class="mut">Os resultados são atualizados automaticamente. Se preferir, você também pode escolher manualmente o arquivo .xlsx da Lotofácil baixado no site da Caixa.</p>
+<input type="file" id="file" accept=".xlsx,.xls,.csv" aria-label="Escolher arquivo de resultados">
+<p id="st" class="mut"></p>
+<div id="last"></div>
+</section>
+
+<section id="s2" class="card hid">
+<h2>Passo 2: gerar jogos</h2>
+<p id="need2" class="er hid">Primeiro carregue os resultados no passo 1.</p>
+<label for="q">Quantos jogos?</label>
+<select id="q"><option>1</option><option>3</option><option selected>5</option><option>10</option><option>20</option></select>
+<label for="fx">Números que você quer SEMPRE (opcional)</label>
+<input id="fx" placeholder="Exemplo: 5 10 25" inputmode="numeric">
+<label for="ex">Números que você quer EVITAR (opcional)</label>
+<input id="ex" placeholder="Exemplo: 1 2" inputmode="numeric">
+<label for="eq">Estilo dos jogos</label>
+<select id="eq"><option value="1">Equilibrado (parecido com os sorteios reais)</option><option value="0">Totalmente aleatório</option></select>
+<label for="an">Comparar com os últimos</label>
+<select id="an"><option value="1">1 ano</option><option value="3">3 anos</option><option value="5" selected>5 anos</option><option value="10">10 anos</option></select>
+<button class="btn" id="gen">Gerar jogos</button>
+<p id="gm" class="er"></p>
+<div id="out"></div>
+</section>
+
+<section id="s3" class="card hid">
+<h2>Passo 3: meus jogos e conferência</h2>
+<label for="add">Adicionar um jogo (15 números)</label>
+<input id="add" placeholder="Exemplo: 01 02 03 05 06 08 10 11 13 14 16 18 20 23 25" inputmode="numeric">
+<button class="btn sec" id="addb">Adicionar jogo</button>
+<p id="am" class="er"></p>
+<label for="co">Conferir com o concurso</label>
+<select id="co"></select>
+<p id="cinfo" class="mut"></p>
+<div id="mine"></div>
+<button class="btn sec hid" id="clr">Apagar todos os meus jogos</button>
+</section>
+<section id="s4" class="card hid">
+<h2>Bolão</h2>
+<p class="mut">Controle quem entrou, quantas cotas cada um pegou e quem já pagou. Os dados ficam só neste aparelho.</p>
+<label for="bn">Nome do bolão</label><input id="bn" placeholder="Exemplo: Bolão da Família">
+<label for="bv">Valor de cada cota (R$)</label><input id="bv" placeholder="Exemplo: 5,00" inputmode="decimal">
+<button class="btn" id="bb">Criar bolão</button><p id="bm" class="er"></p>
+<div id="blist"></div>
+</section>
+</main>
+<footer>
+<p>Aviso importante: todo jogo tem exatamente a mesma chance de ser sorteado (1 em 3.268.760 para 15 acertos). Esta ferramenta ajuda a organizar e conferir jogos, mas <b>não aumenta a chance de ganhar</b>. Apostas apenas para maiores de 18 anos; jogue com responsabilidade. Este site não tem ligação com a Caixa Econômica Federal.</p>
+</footer>
+
+<script>
+const $=id=>document.getElementById(id);
+const ST={d:[],g:[]};
+const p2=n=>String(n).padStart(2,'0');
+const money=v=>v==null?0:typeof v==='number'?v:parseFloat(String(v).replace(/[^\d,]/g,'').replace(',','.'))||0;
+const brl=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function load(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
+ST.d=load('lf_d')||[];ST.g=load('lf_g')||[];
+
+function tab(i){[1,2,3,4].forEach(k=>{$('s'+k).classList.toggle('hid',k!==i);$('n'+k).classList.toggle('on',k===i);});
+  if(i===2)$('need2').classList.toggle('hid',ST.d.length>0);if(i===3)renderMine();if(i===4)renderBolao();window.scrollTo(0,0);}
+[1,2,3,4].forEach(k=>$('n'+k).onclick=()=>tab(k));
+
+function pdate(v){
+  if(v instanceof Date)return v;
+  if(typeof v==='number')return new Date(Math.round((v-25569)*864e5));
+  const m=String(v).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);return m?new Date(+m[3],+m[2]-1,+m[1]):null;
+}
+function fixRef(ws){let R=0,C=0;for(const k in ws){if(k[0]==='!')continue;const a=XLSX.utils.decode_cell(k);if(a.r>R)R=a.r;if(a.c>C)C=a.c;}ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:R,c:C}});}
+function parse(wb){
+  for(const sn of wb.SheetNames){
+    const ws=wb.Sheets[sn];fixRef(ws);
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+    const hi=rows.findIndex(r=>r.some(v=>/^bola\s*1$/i.test(String(v).trim())));
+    if(hi<0)continue;
+    const h=rows[hi].map(v=>String(v==null?'':v).trim());
+    const cb=h.map((v,i)=>/^bola\s*\d+$/i.test(v)?i:-1).filter(i=>i>=0);
+    if(h.some(v=>/^trevo/i.test(v))||cb.length!==15)throw new Error('Este arquivo não é da Lotofácil. Baixe o arquivo certo no site da Caixa (ele deve ter as colunas Bola1 até Bola15).');
+    const cd=h.findIndex(v=>/data/i.test(v)),cc=h.findIndex(v=>/concurso/i.test(v));
+    const rt={};h.forEach((v,i)=>{const m=v.match(/^Rateio\s*(\d+)\s*acertos/i);if(m)rt[+m[1]]=i;});
+    const out=[];
+    for(const r of rows.slice(hi+1)){
+      const d=pdate(r[cd]);const n=cb.map(i=>Number(r[i]));
+      if(!d||isNaN(d)||!n.every(x=>Number.isInteger(x)&&x>=1&&x<=25))continue;
+      const rr={};for(const k in rt)rr[k]=money(r[rt[k]]);
+      out.push({c:Number(r[cc])||out.length+1,t:d.getTime(),n:n.sort((a,b)=>a-b),r:rr});
+    }
+    out.sort((a,b)=>a.t-b.t);return out;
+  }
+  throw new Error('Não encontrei os resultados no arquivo. Confira se é o arquivo da Lotofácil.');
+}
+const fd=t=>new Date(t).toLocaleDateString('pt-BR');
+function balls(g,hit){return '<div class="balls">'+g.map(n=>`<span class="b ${hit&&hit.has(n)?'hit':''}">${p2(n)}</span>`).join('')+'</div>';}
+function showLast(){
+  if(!ST.d.length){$('st').textContent='Nenhum arquivo carregado ainda.';$('last').innerHTML='';return;}
+  const L=ST.d[ST.d.length-1];
+  $('st').innerHTML=`<span class="ok">✔ ${ST.d.length} concursos carregados</span> (de ${fd(ST.d[0].t)} até ${fd(L.t)}).`;
+  $('last').innerHTML=`<p><b>Último concurso: ${L.c}</b> (${fd(L.t)})</p>`+balls(L.n)+'<button class="btn" id="go2">Continuar: gerar jogos</button>';
+  $('go2').onclick=()=>tab(2);
+  fillConc();
+}
+$('file').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  $('st').className='mut';$('st').textContent='Lendo o arquivo…';
+  try{
+    const d=parse(XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true}));
+    if(d.length<20)throw new Error('O arquivo tem poucos concursos ('+d.length+').');
+    ST.d=d;save('lf_d',d.map(x=>[x.c,x.t,x.n,x.r]).map(x=>({c:x[0],t:x[1],n:x[2],r:x[3]})));
+    showLast();
+  }catch(err){$('st').innerHTML='<span class="er">'+err.message+'</span>';}
+};
+
+/* ---------- gerar ---------- */
+const nums=s=>[...new Set((s.match(/\d+/g)||[]).map(Number))];
+const pct=(a,p)=>{const s=[...a].sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor(p*(s.length-1)))];};
+function perfil(D){
+  const so=D.map(x=>x.n.reduce((a,b)=>a+b,0)),pa=D.map(x=>x.n.filter(n=>n%2==0).length);
+  const re=D.slice(1).map((x,i)=>x.n.filter(n=>D[i].n.includes(n)).length);
+  return [so,pa,re].map(a=>[pct(a,.1),pct(a,.9)]);
+}
+function stats(g,D){const S=new Set(g);let mx=0,c11=0;for(const x of D){let h=0;for(const n of x.n)if(S.has(n))h++;if(h>mx)mx=h;if(h>=11)c11++;}return{mx,c11};}
+$('gen').onclick=()=>{
+  const gm=$('gm');gm.textContent='';$('out').innerHTML='';
+  if(!ST.d.length){$('need2').classList.remove('hid');return;}
+  const q=+$('q').value,fix=nums($('fx').value),exc=nums($('ex').value),eq=$('eq').value==='1',anos=+$('an').value;
+  if([...fix,...exc].some(n=>n<1||n>25)){gm.textContent='Use apenas números de 1 a 25.';return;}
+  if(fix.some(n=>exc.includes(n))){gm.textContent='Um mesmo número não pode estar em “sempre” e em “evitar”.';return;}
+  if(fix.length>15){gm.textContent='No máximo 15 números em “sempre”.';return;}
+  const pool=[];for(let n=1;n<=25;n++)if(!fix.includes(n)&&!exc.includes(n))pool.push(n);
+  const need=15-fix.length;
+  if(pool.length<need){gm.textContent='Você evitou números demais: sobram poucos para formar o jogo.';return;}
+  const last=ST.d[ST.d.length-1],corte=new Date(last.t);corte.setFullYear(corte.getFullYear()-anos);
+  const D=ST.d.filter(x=>x.t>=corte),per=perfil(D),seen=new Set(),res=[];let t=0;
+  while(res.length<q&&t++<30000){
+    const a=pool.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+    const g=[...fix,...a.slice(0,need)].sort((x,y)=>x-y),k=g.join();
+    if(seen.has(k))continue;
+    if(eq){const s=g.reduce((x,y)=>x+y,0),p=g.filter(n=>n%2==0).length,r=g.filter(n=>last.n.includes(n)).length;
+      if(s<per[0][0]||s>per[0][1]||p<per[1][0]||p>per[1][1]||r<per[2][0]||r>per[2][1])continue;}
+    seen.add(k);res.push(g);
+  }
+  if(!res.length){gm.textContent='Não consegui montar jogos com esses filtros. Tente tirar alguns números de “sempre” ou “evitar”.';return;}
+  $('out').innerHTML='<h2 style="margin-top:18px">Seus jogos</h2>'+res.map((g,i)=>{const s=stats(g,D);
+    return `<div class="g"><b>Jogo ${i+1}</b>${balls(g)}<p class="mut">Neste período já teria feito no máximo <b>${s.mx} pontos</b> e ${s.c11} vez(es) 11 ou mais.</p><button class="btn sec sm" data-g="${g.join()}">Salvar em Meus jogos</button></div>`;}).join('')+
+    '<button class="btn sec" id="sall">Salvar todos</button>'+(res.length<q?'<p class="mut">Foram encontrados só '+res.length+' jogos diferentes com esses filtros.</p>':'');
+  document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{addGame(b.dataset.g.split(',').map(Number));b.textContent='✔ Salvo';b.disabled=true;});
+  $('sall').onclick=()=>{res.forEach(addGame);$('sall').textContent='✔ Todos salvos';tab(3);};
+};
+
+/* ---------- meus jogos ---------- */
+function addGame(g){const k=g.join();if(!ST.g.some(x=>x.join()===k)){ST.g.push(g);save('lf_g',ST.g);}}
+$('addb').onclick=()=>{
+  const g=nums($('add').value).sort((a,b)=>a-b),m=$('am');
+  if(g.length!==15||g.some(n=>n<1||n>25)){m.textContent='Digite 15 números diferentes, de 1 a 25.';return;}
+  m.textContent='';addGame(g);$('add').value='';renderMine();
+};
+$('clr').onclick=()=>{if(confirm('Apagar todos os seus jogos salvos?')){ST.g=[];save('lf_g',[]);renderMine();}};
+function fillConc(){
+  const sel=$('co'),cur=sel.value;
+  sel.innerHTML=ST.d.slice(-40).reverse().map(x=>`<option value="${x.c}">Concurso ${x.c} (${fd(x.t)})</option>`).join('');
+  if(cur&&[...sel.options].some(o=>o.value===cur))sel.value=cur;
+}
+$('co').onchange=renderMine;
+function renderMine(){
+  $('clr').classList.toggle('hid',!ST.g.length);
+  if(!ST.d.length){$('cinfo').innerHTML='<span class="er">Carregue os resultados no passo 1 para conferir.</span>';}
+  const d=ST.d.find(x=>String(x.c)===$('co').value)||ST.d[ST.d.length-1];
+  if(!ST.g.length){$('mine').innerHTML='<p class="mut">Você ainda não tem jogos salvos. Gere no passo 2 ou adicione um acima.</p>';$('cinfo').textContent='';return;}
+  if(!d){$('mine').innerHTML=ST.g.map((g,i)=>`<div class="g">${balls(g)}</div>`).join('');return;}
+  $('cinfo').innerHTML='Sorteados: '+d.n.map(p2).join(' ');
+  const S=new Set(d.n);
+  $('mine').innerHTML=ST.g.map((g,i)=>{
+    const hit=new Set(g.filter(n=>S.has(n))),h=hit.size,pr=d.r[h];
+    const msg=h>=11?`<span class="ok">${h} pontos${pr?': prêmio de '+brl(pr)+' neste concurso':''}</span>`:`<span class="mut">${h} pontos (sem prêmio)</span>`;
+    return `<div class="g"><b>Jogo ${i+1}</b>${balls(g,hit)}<p class="res">${msg}</p><button class="btn sec sm" data-r="${i}">Remover</button></div>`;}).join('');
+  document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{ST.g.splice(+b.dataset.r,1);save('lf_g',ST.g);renderMine();});
+}
+/* ---------- bolão ---------- */
+ST.b=load('lf_b')||[];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sb=()=>{save('lf_b',ST.b);renderBolao();};
+$('bb').onclick=()=>{
+  const n=$('bn').value.trim(),v=parseFloat($('bv').value.replace(',','.'));
+  if(!n||!(v>0)){$('bm').textContent='Informe o nome do bolão e o valor da cota (exemplo: 5,00).';return;}
+  $('bm').textContent='';ST.b.push({id:Date.now(),n,v,p:[]});$('bn').value='';$('bv').value='';sb();
+};
+function renderBolao(){
+  $('blist').innerHTML=ST.b.map(b=>{
+    const tot=b.p.reduce((a,x)=>a+x.c,0),pg=b.p.filter(x=>x.ok).reduce((a,x)=>a+x.c,0);
+    return `<div class="g"><b>${esc(b.n)}</b> <span class="mut">(cota de ${brl(b.v)})</span>
+    ${b.p.map((x,i)=>`<div class="pr"><label><input type="checkbox" data-bp="${b.id},${i}" ${x.ok?'checked':''}>${esc(x.n)}: ${x.c} cota(s) = ${brl(x.c*b.v)} ${x.ok?'<span class="ok">pago</span>':'<span class="er">falta pagar</span>'}</label><button class="btn sec sm" data-bd="${b.id},${i}">Tirar</button></div>`).join('')||'<p class="mut">Nenhum participante ainda.</p>'}
+    <div class="row2"><input id="pn${b.id}" placeholder="Nome do participante"><input id="pc${b.id}" type="number" min="1" value="1" aria-label="Quantidade de cotas"></div>
+    <button class="btn sec sm" data-ba="${b.id}">Adicionar participante</button>
+    <p>Cotas: <b>${tot}</b> · Recebido: <b class="ok">${brl(pg*b.v)}</b> · Falta receber: <b class="er">${brl((tot-pg)*b.v)}</b></p>
+    <label for="pz${b.id}">Se o bolão ganhar, prêmio total (R$)</label><input id="pz${b.id}" data-bz="${b.id}" inputmode="decimal" placeholder="Exemplo: 350,00"><p id="pzr${b.id}" class="res"></p>
+    <button class="btn sec sm" data-bc="${b.id}">Copiar resumo para WhatsApp</button><button class="btn sec sm" data-bx="${b.id}">Excluir bolão</button></div>`;}).join('')||'<p class="mut">Nenhum bolão criado ainda.</p>';
+}
+$('blist').onclick=e=>{
+  const t=e.target;if(!t.dataset)return;
+  const get=id=>ST.b.find(b=>String(b.id)===String(id));
+  if(t.dataset.ba){const b=get(t.dataset.ba),n=$('pn'+b.id).value.trim(),c=Math.max(1,parseInt($('pc'+b.id).value)||1);if(!n)return;b.p.push({n,c,ok:false});sb();}
+  else if(t.dataset.bd){const [id,i]=t.dataset.bd.split(',');get(id).p.splice(+i,1);sb();}
+  else if(t.dataset.bx){if(confirm('Excluir este bolão?')){ST.b=ST.b.filter(b=>String(b.id)!==t.dataset.bx);sb();}}
+  else if(t.dataset.bc){const b=get(t.dataset.bc),tot=b.p.reduce((a,x)=>a+x.c,0);
+    const txt=`Bolão ${b.n}\nCota: ${brl(b.v)}\n`+b.p.map(x=>`- ${x.n}: ${x.c} cota(s) ${x.ok?'(pago)':'(falta pagar)'}`).join('\n')+`\nTotal: ${tot} cotas (${brl(tot*b.v)})`;
+    (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>{t.textContent='✔ Copiado';},()=>prompt('Copie o resumo:',txt));}
+};
+$('blist').onchange=e=>{const t=e.target;if(t.dataset&&t.dataset.bp){const [id,i]=t.dataset.bp.split(',');const b=ST.b.find(b=>String(b.id)===id);b.p[+i].ok=t.checked;sb();}};
+$('blist').oninput=e=>{const t=e.target;if(t.dataset&&t.dataset.bz){const b=ST.b.find(b=>String(b.id)===t.dataset.bz),tot=b.p.reduce((a,x)=>a+x.c,0),v=parseFloat(t.value.replace(',','.'));$('pzr'+b.id).textContent=tot&&v>0?'Cada cota recebe '+brl(v/tot):'';}};
+showLast();renderMine();
+fetch('resultados.json',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(d=>{if(Array.isArray(d)&&d.length>20){ST.d=d;save('lf_d',d);showLast();renderMine();}}).catch(()=>{});
+</script>
+</body>
+</html>
